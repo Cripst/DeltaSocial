@@ -14,13 +14,24 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// 2. Suport pentru Razor Pages și MVC
+// *** 2. Configurează CORS aici ***
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001") // porturile unde rulează React
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// 3. Suport pentru Razor Pages și MVC
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// 3. Middleware-uri
+// 4. Middleware-uri
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -32,17 +43,21 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// *** 5. Folosește CORS middleware-ul chiar înainte de Authentication și Authorization ***
+app.UseCors();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 4. Mapping pentru Razor Pages și controller routes
+// 6. Mapping pentru Razor Pages și controller routes
 app.MapRazorPages();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 5. Creare roluri la pornirea aplicației
+app.MapControllers(); // adaugă această linie pentru a activa endpoint-urile API
+// 7. Creare roluri la pornirea aplicației
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
