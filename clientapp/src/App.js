@@ -1,12 +1,13 @@
 ﻿import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import Auth from './Auth';
 
 function App() {
     const [message, setMessage] = useState('Încarcare...');
 
     useEffect(() => {
-        fetch('https://localhost:7236/api/test') // înlocuiește cu endpoint-ul tău corect
+        fetch('https://localhost:7236/api/test')
             .then(response => response.json())
             .then(data => setMessage(data.message))
             .catch(() => setMessage('Eroare la conexiunea cu backend-ul'));
@@ -17,17 +18,7 @@ function App() {
             <header className="App-header">
                 <img src={logo} className="App-logo" alt="logo" />
                 <p>{message}</p>
-                <p>
-                    Edit <code>src/App.js</code> and save to reload.
-                </p>
-                <a
-                    className="App-link"
-                    href="https://reactjs.org"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Learn React
-                </a>
+                <Auth />
             </header>
         </div>
     );
