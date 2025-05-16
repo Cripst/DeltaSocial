@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,13 +24,42 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:3000", "http://localhost:3001") // porturile unde rulează React
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
+});
+
+// Add JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
 });
 
 // 3. Suport pentru Razor Pages și MVC
 builder.Services.AddRazorPages();
+builder.Services.AddControllers(options =>
+{
+    options.EnableEndpointRouting = true;
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+});
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient(); // Adăugăm suport pentru HttpClient
 
 var app = builder.Build();
 
@@ -51,12 +83,12 @@ app.UseAuthorization();
 
 // 6. Mapping pentru Razor Pages și controller routes
 app.MapRazorPages();
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapControllers(); // adaugă această linie pentru a activa endpoint-urile API
 // 7. Creare roluri la pornirea aplicației
 using (var scope = app.Services.CreateScope())
 {

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeltaSocial.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250516143747_InitialCreate")]
+    [Migration("20250516211452_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -88,7 +88,7 @@ namespace DeltaSocial.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ProfileId")
+                    b.Property<int?>("ProfileId")
                         .HasColumnType("int");
 
                     b.Property<string>("SecurityStamp")
@@ -453,9 +453,7 @@ namespace DeltaSocial.Migrations
                 {
                     b.HasOne("Profile", "Profile")
                         .WithMany()
-                        .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ProfileId");
 
                     b.Navigation("Profile");
                 });

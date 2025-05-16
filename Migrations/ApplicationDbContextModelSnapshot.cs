@@ -85,7 +85,7 @@ namespace DeltaSocial.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<int>("ProfileId")
+                    b.Property<int?>("ProfileId")
                         .HasColumnType("int");
 
                     b.Property<string>("SecurityStamp")
@@ -450,9 +450,7 @@ namespace DeltaSocial.Migrations
                 {
                     b.HasOne("Profile", "Profile")
                         .WithMany()
-                        .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ProfileId");
 
                     b.Navigation("Profile");
                 });

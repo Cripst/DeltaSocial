@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Test Authentication";
+}
+
+<div class="container mt-5">
+    <h2>Test Authentication</h2>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-info">
+            @ViewBag.Message
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Register</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="@Url.Action("Register")">
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Login</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="@Url.Action("Login")">
+                        <div class="form-group">
+                            <label for="loginEmail">Email:</label>
+                            <input type="email" class="form-control" id="loginEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password:</label>
+                            <input type="password" class="form-control" id="loginPassword" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-success mt-3">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
