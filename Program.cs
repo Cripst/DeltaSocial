@@ -1,17 +1,21 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Adaugă DbContext-ul și Identity
+// 1. Configurează DbContext-ul și Identity cu roluri
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
-// 2. Adaugă suport MVC
+// 2. Suport pentru Razor Pages și MVC
+builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -28,11 +32,12 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Autentificare și autorizare
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 4. Configurarea rutelor MVC
+// 4. Mapping pentru Razor Pages și controller routes
+app.MapRazorPages();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -46,7 +51,7 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-// Metoda pentru creare roluri
+// Metodă pentru creare roluri
 async Task CreateRoles(IServiceProvider serviceProvider)
 {
     var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
