@@ -63,11 +63,11 @@ namespace DeltaSocial.Controllers
                     return Unauthorized(new { message = "Invalid email or password" });
                 }
 
-                var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+                var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
                 if (result.Succeeded)
                 {
                     var token = GenerateJwtToken(user);
-                    return Ok(new { token });
+                    return Ok(new { token, message = "Login successful" });
                 }
 
                 return Unauthorized(new { message = "Invalid email or password" });
