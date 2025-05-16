@@ -3,7 +3,7 @@
 }
 
 <div class="container mt-5">
-    <h2>Test Authentication</h2>
+    <h2 class="mb-4">Test Authentication</h2>
 
     @if (ViewBag.Message != null)
     {
@@ -19,7 +19,7 @@
                     <h3>Register</h3>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="@Url.Action("Register")">
+                    <form method="post" action="/Test/Register">
                         <div class="form-group">
                             <label for="email">Email:</label>
                             <input type="email" class="form-control" id="email" name="email" required>
@@ -40,7 +40,7 @@
                     <h3>Login</h3>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="@Url.Action("Login")">
+                    <form method="post" action="/Test/Login">
                         <div class="form-group">
                             <label for="loginEmail">Email:</label>
                             <input type="email" class="form-control" id="loginEmail" name="email" required>
