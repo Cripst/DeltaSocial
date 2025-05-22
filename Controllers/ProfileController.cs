@@ -3,17 +3,26 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 [Authorize]
 public class ProfileController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public ProfileController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+    public ProfileController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IWebHostEnvironment webHostEnvironment)
     {
         _context = context;
         _userManager = userManager;
+        _webHostEnvironment = webHostEnvironment;
     }
 
     // Căutare persoane
@@ -168,5 +177,72 @@ public class ProfileController : Controller
 
         // Transmitem obiectul profile către vizualizare
         return View(profile);
+    }
+
+    // Adaugare poza la album
+    [Authorize]
+    [HttpPost("AddPhotoToAlbum/{albumId}")] // Specificăm ruta cu ID-ul albumului
+    public async Task<IActionResult> AddPhotoToAlbum(int albumId, IFormFile photoFile)
+    {
+        // Verificăm dacă fișierul a fost încărcat
+        if (photoFile == null || photoFile.Length == 0)
+        {
+            // Putem adăuga o eroare în ModelState sau returna un mesaj specific
+            TempData["ErrorMessage"] = "Nu a fost selectat niciun fișier.";
+            return RedirectToAction("ViewAlbum", new { id = albumId });
+        }
+
+        // Găsim albumul în baza de date
+        var album = await _context.Albums
+            .Include(a => a.Profile)
+            .FirstOrDefaultAsync(a => a.Id == albumId);
+
+        // Verificăm dacă albumul există și dacă utilizatorul curent este proprietarul
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (album == null || userId == null || album.Profile.UserId != userId)
+        {
+            TempData["ErrorMessage"] = "Nu aveți permisiunea să adăugați poze la acest album.";
+            return RedirectToAction("Index", "Profile"); // Sau altă pagină relevantă
+        }
+
+        try
+        {
+            // Determinăm calea unde vom salva fișierul
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            // Generăm un nume unic pentru fișier
+            string uniqueFileName = Guid.NewGuid().ToString() + "_" + photoFile.FileName;
+            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            // Salvăm fișierul pe server
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await photoFile.CopyToAsync(fileStream);
+            }
+
+            // Creăm un nou obiect Photo și îl adăugăm în baza de date
+            var photo = new Photo
+            {
+                Url = "/images/" + uniqueFileName, // Calea relativă pentru afișare în HTML
+                AlbumId = album.Id,
+                // Putem adăuga și alte proprietăți dacă este cazul (ex: UploadDate)
+            };
+
+            _context.Photos.Add(photo);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Poza a fost adăugată cu succes!";
+            return RedirectToAction("ViewAlbum", new { id = albumId });
+        }
+        catch (Exception ex)
+        {
+            // Gestionăm erorile la încărcare/salvare
+            TempData["ErrorMessage"] = $"A aparut o eroare la încărcarea pozei: {ex.Message}";
+            return RedirectToAction("ViewAlbum", new { id = albumId });
+        }
     }
 }

@@ -55,7 +55,6 @@
                 <div class="card-body">
                     <h5 class="card-title">Albume</h5>
                     
-                    <!-- Formular pentru adaugare album nou -->
                     <div class="mb-3">
                         <h6>Adaugă album nou</h6>
                         <form method="post" asp-controller="Profile" asp-action="CreateAlbum" class="form-inline">
@@ -75,7 +74,7 @@
                                 <div class="col-md-4 mb-3">
                                     <div class="card">
                                         <div class="card-body">
-                                            <!-- Link catre pagina de detalii a albumului -->
+                                            
                                             <h6 class="card-title"><a asp-controller="Profile" asp-action="ViewAlbum" asp-route-id="@album.Id">@album.Title</a></h6>
                                             <p class="card-text">
                                                 <small class="text-muted">@(album.Photos?.Count ?? 0) poze</small>
