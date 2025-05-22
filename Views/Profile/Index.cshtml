@@ -1,0 +1,71 @@
+@model Profile
+
+@{
+    ViewData["Title"] = "Profil";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">@Model.Name</h5>
+                    <p class="card-text">
+                        <small class="text-muted">Vizibilitate: @Model.Visibility</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Postări</h5>
+                    @if (Model.Posts != null && Model.Posts.Any())
+                    {
+                        foreach (var post in Model.Posts.OrderByDescending(p => p.Created))
+                        {
+                            <div class="card mb-2">
+                                <div class="card-body">
+                                    <p class="card-text">@post.Content</p>
+                                    <small class="text-muted">@post.Created.ToString("dd/MM/yyyy HH:mm")</small>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nu există postări.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Albume</h5>
+                    @if (Model.Albums != null && Model.Albums.Any())
+                    {
+                        <div class="row">
+                            @foreach (var album in Model.Albums)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">@album.Title</h6>
+                                            <p class="card-text">
+                                                <small class="text-muted">@(album.Photos?.Count ?? 0) poze</small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nu există albume.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
