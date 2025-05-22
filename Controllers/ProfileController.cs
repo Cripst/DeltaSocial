@@ -19,11 +19,15 @@ public class ProfileController : Controller
     // Căutare persoane
     public async Task<IActionResult> Search(string query)
     {
+        ViewBag.SearchQuery = query; // Păstrăm termenul de căutare pentru a-l afișa înapoi în formular
+        ViewBag.SearchPerformed = true; // Indicăm că s-a efectuat o căutare
+
         var results = await _context.Profiles
-            .Where(p => p.Visibility == "Public" && p.Name.Contains(query))
+            .Where(p => p.Visibility == "Public" && (string.IsNullOrEmpty(query) || p.Name.Contains(query)))
             .ToListAsync();
 
-        return View(results);
+        // Returnăm vizualizarea Search cu lista de rezultate
+        return View("Search", results);
     }
 
     // Vizualizare profil
@@ -65,6 +69,71 @@ public class ProfileController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction("ViewProfile", new { id = profile.Id });
+    }
+
+    // Creare album
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> CreateAlbum(string title)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        var profile = await _context.Profiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        if (profile == null)
+        {
+            return BadRequest("Profilul nu a fost găsit.");
+        }
+
+        var album = new Album
+        {
+            Title = title,
+            ProfileId = profile.Id
+        };
+
+        _context.Albums.Add(album);
+        await _context.SaveChangesAsync();
+
+        // Redirecționăm înapoi la pagina de profil
+        return RedirectToAction("Index", "Profile");
+    }
+
+    // Vizualizare detalii album
+    [Authorize]
+    [HttpGet("ViewAlbum/{id}")] // Specificăm ruta cu ID-ul albumului
+    public async Task<IActionResult> ViewAlbum(int id)
+    {
+        var album = await _context.Albums
+            .Include(a => a.Photos)
+            .Include(a => a.Profile) // Include profilul pentru a verifica vizibilitatea/proprietarul
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (album == null)
+        {
+            return NotFound("Album not found.");
+        }
+
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId);
+
+        // Verificăm dacă utilizatorul are permisiunea să vadă albumul
+        // (fie este public, fie utilizatorul este proprietarul profilului)
+        if (album.Profile.Visibility == "Private" && (user == null || album.Profile.UserId != user.Id))
+        {
+            return Forbid(); // Returnăm 403 Forbidden dacă nu are permisiunea
+        }
+
+        // Transmitem obiectul album către vizualizarea ViewAlbum
+        return View(album);
     }
 
     public async Task<IActionResult> Index()

@@ -19,6 +19,18 @@
         <div class="col-md-8">
             <div class="card mb-4">
                 <div class="card-body">
+                    <h5 class="card-title">Crează o postare nouă</h5>
+                    <form method="post" asp-controller="Profile" asp-action="CreatePost">
+                        <div class="form-group">
+                            <textarea name="content" class="form-control" rows="3" placeholder="Ce ai vrea sa postezi?" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Postează</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
                     <h5 class="card-title">Postări</h5>
                     @if (Model.Posts != null && Model.Posts.Any())
                     {
@@ -42,15 +54,29 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Albume</h5>
+                    
+                    <!-- Formular pentru adaugare album nou -->
+                    <div class="mb-3">
+                        <h6>Adaugă album nou</h6>
+                        <form method="post" asp-controller="Profile" asp-action="CreateAlbum" class="form-inline">
+                            <div class="form-group mr-2">
+                                <input type="text" name="title" class="form-control form-control-sm" placeholder="Titlu album nou" required>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm">Crează Album</button>
+                        </form>
+                    </div>
+
                     @if (Model.Albums != null && Model.Albums.Any())
                     {
+                        <h6 class="mt-4">Albumele mele:</h6>
                         <div class="row">
                             @foreach (var album in Model.Albums)
                             {
                                 <div class="col-md-4 mb-3">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h6 class="card-title">@album.Title</h6>
+                                            <!-- Link catre pagina de detalii a albumului -->
+                                            <h6 class="card-title"><a asp-controller="Profile" asp-action="ViewAlbum" asp-route-id="@album.Id">@album.Title</a></h6>
                                             <p class="card-text">
                                                 <small class="text-muted">@(album.Photos?.Count ?? 0) poze</small>
                                             </p>
