@@ -1,0 +1,51 @@
+@using DeltaSocial;
+@using Microsoft.AspNetCore.Identity;
+@model Album
+
+@{
+    ViewData["Title"] = $"Album: {Model.Title}";
+}
+
+<div class="container mt-4">
+    <h2>Album: @Model.Title</h2>
+
+    @inject UserManager<ApplicationUser> UserManager
+    @if (User.Identity.IsAuthenticated && Model.Profile.UserId == UserManager.GetUserId(User))
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Adaugă poză nouă</h5>
+                <form method="post" asp-controller="Profile" asp-action="AddPhotoToAlbum" asp-route-albumId="@Model.Id" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="photoFile">Selectează fișierul foto:</label>
+                        <input type="file" name="photoFile" id="photoFile" class="form-control-file" required>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3">Încarcă poză</button>
+                </form>
+            </div>
+        </div>
+    }
+
+    <h3>Poze (@(Model.Photos?.Count ?? 0))</h3>
+    @if (Model.Photos != null && Model.Photos.Any())
+    {
+        <div class="row">
+            @foreach (var photo in Model.Photos)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <img src="@photo.Url" class="card-img-top" alt="@Model.Title" style="object-fit: cover; height: 200px;">
+                        <div class="card-body">
+                            <p class="card-text"><small class="text-muted">Comentarii: @(photo.Comments?.Count ?? 0)</small></p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">Acest album nu conține încă poze.</p>
+    }
+
+</div> 
