@@ -20,15 +20,17 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 // *** 2. Configurează CORS aici ***
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
 });
 
 // Add JWT Authentication
+/*
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,6 +49,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
+*/
 
 // 3. Suport pentru Razor Pages și MVC
 builder.Services.AddRazorPages();
@@ -59,6 +62,22 @@ builder.Services.AddControllers(options =>
 });
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient(); // Adăugăm suport pentru HttpClient
+
+// Configurare HTTPS
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 7236;
+    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+});
+
+// Configurare Kestrel pentru HTTPS
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(7236, listenOptions =>
+    {
+        listenOptions.UseHttps();
+    });
+});
 
 var app = builder.Build();
 
@@ -75,7 +94,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // *** 5. Folosește CORS middleware-ul chiar înainte de Authentication și Authorization ***
-app.UseCors();
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

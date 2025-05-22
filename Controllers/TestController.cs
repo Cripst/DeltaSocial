@@ -5,6 +5,9 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace DeltaSocial.Controllers
 {
@@ -14,15 +17,24 @@ namespace DeltaSocial.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpClientFactory _clientFactory;
         private readonly ILogger<TestController> _logger;
+        private readonly ApplicationDbContext _context;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IConfiguration _configuration;
 
         public TestController(
             UserManager<ApplicationUser> userManager, 
             IHttpClientFactory clientFactory,
-            ILogger<TestController> logger)
+            ILogger<TestController> logger,
+            ApplicationDbContext context,
+            SignInManager<ApplicationUser> signInManager,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _clientFactory = clientFactory;
             _logger = logger;
+            _context = context;
+            _signInManager = signInManager;
+            _configuration = configuration;
         }
 
         // MVC Routes
@@ -32,66 +44,129 @@ namespace DeltaSocial.Controllers
             return View();
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(string email, string password)
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register(RegisterModel model)
         {
             try
             {
-                var user = new ApplicationUser { UserName = email, Email = email };
-                var result = await _userManager.CreateAsync(user, password);
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var result = await _userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation($"User registered successfully. UserId: {user.Id}");
-                    ViewBag.Message = $"Registration successful. UserId: {user.Id}";
+
+                    // Creăm profilul pentru utilizator
+                    var profile = new Profile
+                    {
+                        UserId = user.Id,
+                        Name = model.Email.Split('@')[0], // Folosim partea din email înainte de @ ca nume
+                        Visibility = "Public"
+                    };
+
+                    _context.Profiles.Add(profile);
+                    await _context.SaveChangesAsync();
+
+                    // Actualizăm utilizatorul cu ID-ul profilului
+                    user.ProfileId = profile.Id;
+                    await _userManager.UpdateAsync(user);
+
+                    // Autentificăm utilizatorul imediat după înregistrare
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+
+                    // Redirecționăm către pagina de profil după înregistrare reușită
+                    return RedirectToAction("Index", "Profile");
                 }
-                else
+
+                // Dacă înregistrarea eșuează, adăugăm erorile în ModelState
+                foreach (var error in result.Errors)
                 {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    _logger.LogError($"Registration failed: {errors}");
-                    ViewBag.Message = errors;
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
+
+                // Revenim la vizualizarea Index (unde ar fi formularul de înregistrare)
+                return View("Index", model);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Registration error: {ex.Message}");
-                ViewBag.Message = $"Error: {ex.Message}";
+                _logger.LogError($"Error during registration: {ex.Message}");
+                // Adăugăm eroarea în ModelState și revenim la vizualizare
+                ModelState.AddModelError(string.Empty, "A aparut o eroare la inregistrare.");
+                return View("Index", model);
             }
-
-            return View("Index");
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login(string email, string password)
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login(LoginModel model)
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
+
+                if (result.Succeeded)
                 {
-                    _logger.LogWarning($"Login failed: User not found for email {email}");
-                    ViewBag.Message = "Invalid email or password";
-                    return View("Index");
+                    // Redirecționăm către pagina de profil după login reușit
+                    return RedirectToAction("Index", "Profile");
                 }
 
-                _logger.LogInformation($"User found. UserId: {user.Id}");
-                var result = await _userManager.CheckPasswordAsync(user, password);
-                if (result)
-                {
-                    ViewBag.Message = $"Login successful. UserId: {user.Id}";
-                }
-                else
-                {
-                    ViewBag.Message = "Invalid email or password";
-                }
+                // Dacă login-ul eșuează, adăugăm o eroare în ModelState
+                ModelState.AddModelError(string.Empty, "Login invalid.");
+
+                // Revenim la vizualizarea Index (unde ar fi formularul de login)
+                return View("Index", model);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Login error: {ex.Message}");
-                ViewBag.Message = $"Error: {ex.Message}";
+                _logger.LogError($"Error during login: {ex.Message}");
+                // Adăugăm eroarea în ModelState și revenim la vizualizare
+                ModelState.AddModelError(string.Empty, "A aparut o eroare la autentificare.");
+                return View("Index", model);
             }
+        }
 
-            return View("Index");
+        [HttpGet("Profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = "User not found in token" });
+                }
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found in database" });
+                }
+
+                var profile = await _context.Profiles
+                    .Include(p => p.Posts)
+                    .Include(p => p.Albums)
+                    .ThenInclude(a => a.Photos)
+                    .FirstOrDefaultAsync(p => p.Id == user.ProfileId);
+
+                if (profile == null)
+                {
+                    return NotFound(new { message = "Profile not found" });
+                }
+
+                return Ok(new
+                {
+                    id = profile.Id,
+                    name = profile.Name,
+                    visibility = profile.Visibility,
+                    posts = profile.Posts?.Select(p => new { id = p.Id, content = p.Content, created = p.Created }),
+                    albums = profile.Albums?.Select(a => new { id = a.Id, title = a.Title, photos = a.Photos?.Count })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error getting profile: {ex.Message}");
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         // API Routes

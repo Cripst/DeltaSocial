@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
+[Authorize]
 public class ProfileController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -63,5 +65,39 @@ public class ProfileController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction("ViewProfile", new { id = profile.Id });
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null)
+        {
+            // Acest caz nu ar trebui să se întâmple datorită atributului [Authorize],
+            // dar este bine să avem o verificare.
+            return Unauthorized();
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            // Utilizatorul autentificat din token nu a fost găsit în baza de date
+            return NotFound("User not found.");
+        }
+
+        // Folosim ProfileId-ul utilizatorului pentru a găsi profilul
+        var profile = await _context.Profiles
+            .Include(p => p.Posts)
+            .Include(p => p.Albums)
+            .ThenInclude(a => a.Photos)
+            .FirstOrDefaultAsync(p => p.Id == user.ProfileId);
+
+        if (profile == null)
+        {
+            // Profilul nu a fost găsit pentru utilizator (deși ar trebui creat la înregistrare)
+            return NotFound("Profile not found.");
+        }
+
+        // Transmitem obiectul profile către vizualizare
+        return View(profile);
     }
 }
