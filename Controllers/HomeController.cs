@@ -8,5 +8,10 @@ namespace DeltaSocial.Controllers // asigură-te că numele proiectului tău e c
         {
             return View();
         }
+
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
     }
 }

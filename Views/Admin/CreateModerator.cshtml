@@ -1,0 +1,44 @@
+@model DeltaSocial.Models.CreateModeratorViewModel
+
+@{
+    ViewData["Title"] = "Creare Cont Moderator";
+}
+
+<div class="container mt-4">
+    <h2>Creare Cont Moderator</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <form asp-action="CreateModerator" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="form-group">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword"></label>
+                    <input asp-for="ConfirmPassword" class="form-control" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mt-3">
+                    <button type="submit" class="btn btn-primary">Creează Cont Moderator</button>
+                    <a asp-action="Index" class="btn btn-secondary">Înapoi la Listă</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

@@ -1,0 +1,42 @@
+@model List<DeltaSocial.Models.UserViewModel>
+
+@{
+    ViewData["Title"] = "Administrare Utilizatori";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Administrare Utilizatori</h2>
+        <a asp-action="CreateModerator" class="btn btn-success">Creează Cont Moderator</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Nume Utilizator</th>
+                    <th>Roluri</th>
+                    <th>Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>@user.UserName</td>
+                        <td>
+                            @string.Join(", ", user.Roles)
+                        </td>
+                        <td>
+                            <a asp-action="EditUser" asp-route-id="@user.Id" class="btn btn-primary btn-sm">
+                                Editează Roluri
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div> 
