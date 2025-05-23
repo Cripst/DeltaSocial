@@ -34,6 +34,9 @@ public class ProfileController : Controller
         ViewBag.SearchPerformed = true; // Indicăm că s-a efectuat o căutare
 
         var results = await _context.Profiles
+            .Include(p => p.Posts)
+            .Include(p => p.Albums)
+                .ThenInclude(a => a.Photos)
             .Where(p => p.Visibility == "Public" && (string.IsNullOrEmpty(query) || p.Name.Contains(query)))
             .ToListAsync();
 
@@ -264,5 +267,29 @@ public class ProfileController : Controller
             TempData["ErrorMessage"] = $"A aparut o eroare la încărcarea pozei: {ex.Message}";
             return RedirectToAction("ViewAlbum", new { id = albumId });
         }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ToggleVisibility()
+    {
+        var userId = _userManager.GetUserId(User);
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var profile = await _context.Profiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        if (profile == null)
+        {
+            return NotFound("Profilul nu a fost găsit.");
+        }
+
+        // Schimbăm vizibilitatea
+        profile.Visibility = profile.Visibility == "Public" ? "Private" : "Public";
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Profilul este acum {(profile.Visibility == "Public" ? "public" : "privat")}.";
+        return RedirectToAction(nameof(Index));
     }
 }

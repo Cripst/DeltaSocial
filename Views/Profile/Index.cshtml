@@ -1,3 +1,5 @@
+@using DeltaSocial
+@using Microsoft.AspNetCore.Identity
 @model Profile
 
 @{
@@ -8,8 +10,20 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">
-            <h2>@Model.Name</h2>
-            <p>Vizibilitate: @Model.Visibility</p>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>@Model.Name</h2>
+                @if (!isVisitor)
+                {
+                    <form asp-action="ToggleVisibility" method="post" class="d-inline">
+                        <button type="submit" class="btn @(Model.Visibility == "Public" ? "btn-warning" : "btn-success")">
+                            @(Model.Visibility == "Public" ? "Profil Public" : "Profil Privat")
+                        </button>
+                    </form>
+                }
+            </div>
+            <p class="text-muted">
+                @(Model.Visibility == "Public" ? "Acest profil este vizibil pentru toată lumea" : "Acest profil este privat și poate fi văzut doar de tine")
+            </p>
 
             @if (!isVisitor)
             {
