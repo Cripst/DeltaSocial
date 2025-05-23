@@ -1,0 +1,18 @@
+@{
+    ViewData["Title"] = "Acces Restricționat";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4">Acces Restricționat</h1>
+            <p class="lead">Ca vizitator, aveți acces limitat la funcționalitățile aplicației.</p>
+            <hr class="my-4">
+            <p>Pentru a avea acces la toate funcționalitățile, vă rugăm să vă creați un cont sau să contactați un administrator.</p>
+            <div class="mt-4">
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary me-2">Creează Cont</a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Înapoi la Pagina Principală</a>
+            </div>
+        </div>
+    </div>
+</div> 

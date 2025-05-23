@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DeltaSocial.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,12 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddRoles<IdentityRole>()  // Adăugăm suport pentru roluri
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// Add EmailSender service
+builder.Services.AddTransient<IEmailSender<ApplicationUser>, EmailSender>();
 
 // *** 2. Configurează CORS aici ***
 builder.Services.AddCors(options =>
@@ -107,26 +108,68 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 7. Creare roluri la pornirea aplicației
+// 7. Creare roluri și cont moderator la pornirea aplicației
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    await CreateRoles(services);
-}
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-app.Run();
-
-// Metodă pentru creare roluri
-async Task CreateRoles(IServiceProvider serviceProvider)
-{
-    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    string[] roleNames = { "Visitor", "User", "Moderator" };
-
-    foreach (var role in roleNames)
+    // Creare roluri
+    var roles = new[] { "Visitor", "User", "Moderator" };
+    foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+
+    // Creare cont moderator implicit
+    var moderatorEmail = "moderator@deltasocial.com";
+    var moderatorUser = await userManager.FindByEmailAsync(moderatorEmail);
+
+    if (moderatorUser == null)
+    {
+        moderatorUser = new ApplicationUser
+        {
+            UserName = moderatorEmail,
+            Email = moderatorEmail,
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(moderatorUser, "Moderator123!");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(moderatorUser, "Moderator");
+
+            // Creăm profilul pentru moderator
+            var profile = new Profile
+            {
+                UserId = moderatorUser.Id,
+                Name = "Moderator",
+                Visibility = "Public"
+            };
+
+            context.Profiles.Add(profile);
+            await context.SaveChangesAsync();
+
+            // Actualizăm ProfileId-ul utilizatorului
+            moderatorUser.ProfileId = profile.Id;
+            await userManager.UpdateAsync(moderatorUser);
+        }
+    }
+
+    // Asignăm rolul de User tuturor utilizatorilor existenți care nu au rol
+    var users = await userManager.Users.ToListAsync();
+    foreach (var user in users)
+    {
+        var userRoles = await userManager.GetRolesAsync(user);
+        if (!userRoles.Any())
+        {
+            await userManager.AddToRoleAsync(user, "User");
+        }
+    }
 }
+
+app.Run();

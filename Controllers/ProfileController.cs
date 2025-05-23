@@ -10,8 +10,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
+using DeltaSocial.Attributes;
 
 [Authorize]
+[VisitorAccess]
 public class ProfileController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -150,32 +152,50 @@ public class ProfileController : Controller
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null)
         {
-            // Acest caz nu ar trebui să se întâmple datorită atributului [Authorize],
-            // dar este bine să avem o verificare.
             return Unauthorized();
         }
 
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
-            // Utilizatorul autentificat din token nu a fost găsit în baza de date
             return NotFound("User not found.");
         }
 
-        // Folosim ProfileId-ul utilizatorului pentru a găsi profilul
+        // First try to find the profile by UserId
         var profile = await _context.Profiles
             .Include(p => p.Posts)
             .Include(p => p.Albums)
             .ThenInclude(a => a.Photos)
-            .FirstOrDefaultAsync(p => p.Id == user.ProfileId);
+            .FirstOrDefaultAsync(p => p.UserId == userId);
 
-        if (profile == null)
+        // If no profile found by UserId, try by ProfileId
+        if (profile == null && user.ProfileId.HasValue)
         {
-            // Profilul nu a fost găsit pentru utilizator (deși ar trebui creat la înregistrare)
-            return NotFound("Profile not found.");
+            profile = await _context.Profiles
+                .Include(p => p.Posts)
+                .Include(p => p.Albums)
+                .ThenInclude(a => a.Photos)
+                .FirstOrDefaultAsync(p => p.Id == user.ProfileId.Value);
         }
 
-        // Transmitem obiectul profile către vizualizare
+        // If still no profile found, create one
+        if (profile == null)
+        {
+            profile = new Profile
+            {
+                UserId = userId,
+                Name = user.Email.Split('@')[0],
+                Visibility = "Public"
+            };
+
+            _context.Profiles.Add(profile);
+            await _context.SaveChangesAsync();
+
+            // Update the user with the new profile ID
+            user.ProfileId = profile.Id;
+            await _userManager.UpdateAsync(user);
+        }
+
         return View(profile);
     }
 
