@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeltaSocial.Controllers
 {
@@ -14,15 +15,18 @@ namespace DeltaSocial.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _context;
 
         public AuthController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _context = context;
         }
 
         [HttpGet]
@@ -36,11 +40,37 @@ namespace DeltaSocial.Controllers
         {
             try
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                // Create user with both UserName and Email set to the email
+                var user = new ApplicationUser 
+                { 
+                    UserName = model.Email,
+                    Email = model.Email,
+                    NormalizedUserName = model.Email.ToUpperInvariant(),
+                    NormalizedEmail = model.Email.ToUpperInvariant(),
+                    EmailConfirmed = true // Since we're not using email confirmation for now
+                };
+                
                 var result = await _userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
+                    // Create a profile for the new user
+                    var profile = new Profile
+                    {
+                        UserId = user.Id,
+                        Name = model.Email.Split('@')[0], // Use part of email as name
+                        Visibility = "Public"
+                    };
+                    _context.Profiles.Add(profile);
+                    await _context.SaveChangesAsync();
+
+                    // Update user with profile
+                    user.ProfileId = profile.Id;
+                    await _userManager.UpdateAsync(user);
+
+                    // Add user to the "User" role
+                    await _userManager.AddToRoleAsync(user, "User");
+
                     return Ok(new { message = "Registration successful" });
                 }
 
@@ -57,20 +87,48 @@ namespace DeltaSocial.Controllers
         {
             try
             {
+                // Try to find user by email
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
                     return Unauthorized(new { message = "Invalid email or password" });
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
-                if (result.Succeeded)
+                // Check if email is confirmed
+                if (!user.EmailConfirmed)
                 {
-                    var token = GenerateJwtToken(user);
-                    return Ok(new { token, message = "Login successful" });
+                    return Unauthorized(new { message = "Please confirm your email before logging in" });
                 }
 
-                return Unauthorized(new { message = "Invalid email or password" });
+                // Verify password directly using UserManager
+                var passwordValid = await _userManager.CheckPasswordAsync(user, model.Password);
+                if (!passwordValid)
+                {
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+
+                // Load user with profile
+                user = await _context.Users
+                    .Include(u => u.Profile)
+                    .FirstOrDefaultAsync(u => u.Id == user.Id);
+
+                // Generate JWT token
+                var token = GenerateJwtToken(user);
+
+                // Get user roles
+                var roles = await _userManager.GetRolesAsync(user);
+
+                return Ok(new { 
+                    token, 
+                    message = "Login successful",
+                    user = new {
+                        id = user.Id,
+                        email = user.Email,
+                        profileId = user.ProfileId,
+                        profileName = user.Profile?.Name,
+                        roles = roles
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -84,7 +142,8 @@ namespace DeltaSocial.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id)
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim("ProfileId", user.ProfileId?.ToString() ?? "")
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));

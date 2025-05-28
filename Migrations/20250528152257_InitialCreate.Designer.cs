@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeltaSocial.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250516211452_InitialCreate")]
+    [Migration("20250528152257_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -155,17 +155,21 @@ namespace DeltaSocial.Migrations
 
                     b.Property<string>("ReceiverId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SenderId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
 
                     b.ToTable("Friendships");
                 });
@@ -313,10 +317,12 @@ namespace DeltaSocial.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
@@ -353,10 +359,12 @@ namespace DeltaSocial.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
@@ -469,6 +477,25 @@ namespace DeltaSocial.Migrations
                     b.Navigation("Photo");
                 });
 
+            modelBuilder.Entity("Friendship", b =>
+                {
+                    b.HasOne("ApplicationUser", "Receiver")
+                        .WithMany("ReceivedFriendships")
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ApplicationUser", "Sender")
+                        .WithMany("SentFriendships")
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("GroupProfile", b =>
                 {
                     b.HasOne("Group", null)
@@ -560,6 +587,13 @@ namespace DeltaSocial.Migrations
             modelBuilder.Entity("Album", b =>
                 {
                     b.Navigation("Photos");
+                });
+
+            modelBuilder.Entity("ApplicationUser", b =>
+                {
+                    b.Navigation("ReceivedFriendships");
+
+                    b.Navigation("SentFriendships");
                 });
 
             modelBuilder.Entity("Photo", b =>

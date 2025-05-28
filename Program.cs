@@ -31,7 +31,6 @@ builder.Services.AddCors(options =>
 });
 
 // Add JWT Authentication
-/*
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -50,7 +49,6 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
-*/
 
 // 3. Suport pentru Razor Pages și MVC
 builder.Services.AddRazorPages();

@@ -15,8 +15,10 @@ public class Friendship
     public string Status { get; set; } // "Pending", "Accepted", "Rejected"
     
     [ForeignKey("SenderId")]
+    [InverseProperty("SentFriendships")]
     public virtual ApplicationUser Sender { get; set; }
     
     [ForeignKey("ReceiverId")]
+    [InverseProperty("ReceivedFriendships")]
     public virtual ApplicationUser Receiver { get; set; }
 }

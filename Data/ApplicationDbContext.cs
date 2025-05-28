@@ -17,4 +17,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Friendship> Friendships { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<Group> Groups { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Friendship>()
+            .HasOne(f => f.Sender)
+            .WithMany(u => u.SentFriendships)
+            .HasForeignKey(f => f.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Friendship>()
+            .HasOne(f => f.Receiver)
+            .WithMany(u => u.ReceivedFriendships)
+            .HasForeignKey(f => f.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
 }
