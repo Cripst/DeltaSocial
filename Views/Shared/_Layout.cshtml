@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/DeltaSocial.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 </head>
 <body>
     <header>
@@ -35,6 +36,14 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Profile" asp-action="Index">Profil</a>
                         </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Friendship" asp-action="FriendRequests">
+                                    <i class="fas fa-user-friends"></i> Cereri de prietenie
+                                </a>
+                            </li>
+                        }
                     </ul>
                     <form class="d-flex" asp-controller="Profile" asp-action="Search" method="get">
                         <input class="form-control me-2" type="search" name="query" placeholder="Caută persoane..." aria-label="Search">

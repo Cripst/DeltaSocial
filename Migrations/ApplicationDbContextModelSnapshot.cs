@@ -40,7 +40,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasIndex("ProfileId");
 
-                    b.ToTable("Albums");
+                    b.ToTable("Albums", (string)null);
                 });
 
             modelBuilder.Entity("ApplicationUser", b =>
@@ -139,7 +139,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasIndex("PhotoId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("Friendship", b =>
@@ -164,7 +164,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Friendships");
+                    b.ToTable("Friendships", (string)null);
                 });
 
             modelBuilder.Entity("Group", b =>
@@ -181,7 +181,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Groups");
+                    b.ToTable("Groups", (string)null);
                 });
 
             modelBuilder.Entity("GroupProfile", b =>
@@ -196,7 +196,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasIndex("MembersId");
 
-                    b.ToTable("GroupProfile");
+                    b.ToTable("GroupProfile", (string)null);
                 });
 
             modelBuilder.Entity("Message", b =>
@@ -227,7 +227,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -382,7 +382,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasIndex("AlbumId");
 
-                    b.ToTable("Photos");
+                    b.ToTable("Photos", (string)null);
                 });
 
             modelBuilder.Entity("Post", b =>
@@ -407,7 +407,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasIndex("ProfileId");
 
-                    b.ToTable("Posts");
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("Profile", b =>
@@ -432,7 +432,7 @@ namespace DeltaSocial.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Profiles");
+                    b.ToTable("Profiles", (string)null);
                 });
 
             modelBuilder.Entity("Album", b =>

@@ -4,6 +4,8 @@
 
 @{
     ViewData["Title"] = $"{Model.Name}'s Profil";
+    var currentUserId = UserManager.GetUserId(User);
+    var isOwnProfile = currentUserId == Model.UserId;
 }
 
 <div class="container mt-4">
@@ -15,6 +17,15 @@
                     <p class="card-text">
                         <small class="text-muted">Vizibilitate: @Model.Visibility</small>
                     </p>
+                    @if (User.Identity.IsAuthenticated && !isOwnProfile)
+                    {
+                        <div class="mt-3">
+                            <a href="@Url.Action("SendRequest", "Friendship", new { receiverId = Model.UserId })" 
+                               class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Adaugă prieten
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
