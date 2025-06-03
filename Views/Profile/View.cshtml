@@ -133,7 +133,7 @@
                     {
                         <div class="col-md-4 mb-4">
                             <div class="card">
-                                @if (album.Photos.Any())
+                                @if (album.Photos != null && album.Photos.Any())
                                 {
                                     <img src="@album.Photos.First().Url" class="card-img-top" alt="@album.Title" style="height: 200px; object-fit: cover;">
                                 }
@@ -146,7 +146,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title">@album.Title</h5>
                                     <p class="card-text">
-                                        <small class="text-muted">@album.Photos.Count photos</small>
+                                        <small class="text-muted">@(album.Photos?.Count ?? 0) photos</small>
                                     </p>
                                     <a asp-action="ViewAlbum" asp-route-id="@album.Id" class="btn btn-primary">View Album</a>
                                 </div>

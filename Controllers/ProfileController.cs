@@ -50,6 +50,7 @@ namespace DeltaSocial.Controllers
             var profile = await _context.Profiles
                 .Include(p => p.Posts)
                 .Include(p => p.Albums)
+                    .ThenInclude(a => a.Photos)
                 .FirstOrDefaultAsync(p => p.UserId == id);
 
             if (profile == null)
