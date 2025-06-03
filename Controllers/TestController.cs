@@ -158,7 +158,7 @@ namespace DeltaSocial.Controllers
                     id = profile.Id,
                     name = profile.Name,
                     visibility = profile.Visibility,
-                    posts = profile.Posts?.Select(p => new { id = p.Id, content = p.Content, created = p.Created }),
+                    posts = profile.Posts?.Select(p => new { id = p.Id, content = p.Content, created = p.CreatedAt }),
                     albums = profile.Albums?.Select(a => new { id = a.Id, title = a.Title, photos = a.Photos?.Count })
                 });
             }

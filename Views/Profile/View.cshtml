@@ -1,0 +1,160 @@
+@model Profile
+
+@{
+    ViewData["Title"] = Model.Name + "'s Profile";
+    var isOwner = User.Identity.IsAuthenticated && User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.UserId;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">@Model.Name</h2>
+                    <p class="card-text">
+                        <small class="text-muted">Profile Visibility: @Model.Visibility</small>
+                    </p>
+                    
+                    @if (isOwner)
+                    {
+                        <form asp-action="UpdateVisibility" method="post" class="mb-3">
+                            <div class="form-group">
+                                <label for="visibility">Change Profile Visibility:</label>
+                                <select name="visibility" class="form-control" onchange="this.form.submit()">
+                                    <option value="Public" selected="@(Model.Visibility == "Public")">Public</option>
+                                    <option value="Private" selected="@(Model.Visibility == "Private")">Private</option>
+                                </select>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            @if (isOwner)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Create New Post</h4>
+                        <form asp-action="CreatePost" method="post">
+                            <div class="form-group mb-3">
+                                <label for="title">Title</label>
+                                <input type="text" name="title" class="form-control" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="content">Content</label>
+                                <textarea name="content" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post</button>
+                        </form>
+                    </div>
+                </div>
+            }
+
+            @if (Model.Posts != null && Model.Posts.Any())
+            {
+                <h3>Posts</h3>
+                <div class="list-group">
+                    @foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
+                    {
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">@post.Title</h5>
+                                <small class="text-muted">@post.CreatedAt.ToString("g")</small>
+                            </div>
+                            <p class="mb-1">@post.Content</p>
+                            @if (isOwner || User.IsInRole("Moderator"))
+                            {
+                                <form asp-action="DeletePost" method="post" class="mt-2">
+                                    <input type="hidden" name="id" value="@post.Id">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No posts yet.
+                </div>
+            }
+
+            @if (Model.Albums != null && Model.Albums.Any())
+            {
+                <h3 class="mt-4">Photo Albums</h3>
+                <div class="row">
+                    @foreach (var album in Model.Albums)
+                    {
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">@album.Title</h5>
+                                    <a href="@Url.Action("ViewAlbum", "Profile", new { id = album.Id })" class="btn btn-primary">View Album</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h2>Photo Albums</h2>
+            @if (isOwner)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Create New Album</h5>
+                        <form asp-action="CreateAlbum" method="post">
+                            <div class="form-group">
+                                <input type="text" name="title" class="form-control" placeholder="Album title" required />
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Create Album</button>
+                        </form>
+                    </div>
+                </div>
+            }
+
+            @if (!Model.Albums.Any())
+            {
+                <div class="alert alert-info">
+                    No albums yet.
+                </div>
+            }
+            else
+            {
+                <div class="row">
+                    @foreach (var album in Model.Albums)
+                    {
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                @if (album.Photos.Any())
+                                {
+                                    <img src="@album.Photos.First().Url" class="card-img-top" alt="@album.Title" style="height: 200px; object-fit: cover;">
+                                }
+                                else
+                                {
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-images fa-3x text-muted"></i>
+                                    </div>
+                                }
+                                <div class="card-body">
+                                    <h5 class="card-title">@album.Title</h5>
+                                    <p class="card-text">
+                                        <small class="text-muted">@album.Photos.Count photos</small>
+                                    </p>
+                                    <a asp-action="ViewAlbum" asp-route-id="@album.Id" class="btn btn-primary">View Album</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div> 

@@ -112,21 +112,13 @@ namespace DeltaSocial.Controllers
                     .Include(u => u.Profile)
                     .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-                // Generate JWT token
-                var token = GenerateJwtToken(user);
-
-                // Get user roles
-                var roles = await _userManager.GetRolesAsync(user);
-
                 return Ok(new { 
-                    token, 
                     message = "Login successful",
                     user = new {
                         id = user.Id,
                         email = user.Email,
                         profileId = user.ProfileId,
-                        profileName = user.Profile?.Name,
-                        roles = roles
+                        profileName = user.Profile?.Name
                     }
                 });
             }
@@ -134,30 +126,6 @@ namespace DeltaSocial.Controllers
             {
                 return BadRequest(new { error = ex.Message });
             }
-        }
-
-        private string GenerateJwtToken(ApplicationUser user)
-        {
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim("ProfileId", user.ProfileId?.ToString() ?? "")
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 

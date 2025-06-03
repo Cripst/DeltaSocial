@@ -37,12 +37,15 @@
                          <h5 class="card-title">Postări</h5>
                          @if (Model.Posts != null && Model.Posts.Any())
                          {
-                             foreach (var post in Model.Posts.OrderByDescending(p => p.Created))
+                             foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
                              {
                                  <div class="card mb-2">
                                      <div class="card-body">
+                                         <div class="d-flex w-100 justify-content-between">
+                                             <h5 class="mb-1">@post.Title</h5>
+                                             <small class="text-muted">@post.CreatedAt.ToString("g")</small>
+                                         </div>
                                          <p class="card-text">@post.Content</p>
-                                         <small class="text-muted">@post.Created.ToString("dd/MM/yyyy HH:mm")</small>
                                      </div>
                                  </div>
                              }

@@ -32,6 +32,7 @@
                         <h5 class="card-title">Creează Postare</h5>
                         <form asp-action="CreatePost" method="post">
                             <div class="form-group">
+                                <input type="text" name="title" class="form-control mb-2" placeholder="Titlu" required />
                                 <textarea name="content" class="form-control" rows="3" placeholder="Scrie ceva..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary mt-2">Postează</button>
@@ -43,12 +44,12 @@
             <h4>Postări</h4>
             @if (Model.Posts != null && Model.Posts.Any())
             {
-                foreach (var post in Model.Posts.OrderByDescending(p => p.Created))
+                foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
                 {
                     <div class="card mb-3">
                         <div class="card-body">
                             <p class="card-text">@post.Content</p>
-                            <small class="text-muted">@post.Created.ToString("dd/MM/yyyy HH:mm")</small>
+                            <small class="text-muted">@post.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
                         </div>
                     </div>
                 }
