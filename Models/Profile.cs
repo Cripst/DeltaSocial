@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System.Text.RegularExpressions;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 public class Profile
 {
@@ -9,16 +10,18 @@ public class Profile
     [Required]
     public string UserId { get; set; }
     
-    [Required]
-    public string Name { get; set; }
+    [ForeignKey("UserId")]
+    public virtual ApplicationUser User { get; set; }
     
-    public string FirstName { get; set; }
+    public string? Name { get; set; }
     
-    public string LastName { get; set; }
+    public string? FirstName { get; set; }
     
-    public string Bio { get; set; }
+    public string? LastName { get; set; }
     
-    public string ProfilePicture { get; set; }
+    public string? Bio { get; set; }
+    
+    public string? ProfilePicture { get; set; }
     
     public string Visibility { get; set; } = "Public";
     
@@ -26,5 +29,8 @@ public class Profile
     
     public virtual ICollection<Album> Albums { get; set; }
     
-    public virtual ApplicationUser User { get; set; }
+    public int? GroupId { get; set; }
+    
+    [ForeignKey("GroupId")]
+    public virtual Group? Group { get; set; }
 }

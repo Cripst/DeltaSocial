@@ -26,7 +26,9 @@
                         @if (User.IsInRole("Moderator"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Administrare</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Moderator" asp-action="Index">
+                                    <i class="fas fa-shield-alt"></i> Moderare
+                                </a>
                             </li>
                         }
                         <li class="nav-item">

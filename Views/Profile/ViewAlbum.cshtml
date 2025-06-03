@@ -19,7 +19,7 @@
     {
         <div class="row mb-4">
             <div class="col-12">
-                <form asp-action="AddPhotoToAlbum" method="post" enctype="multipart/form-data" class="card">
+                <form asp-action="AddPhotoToAlbum" asp-controller="Profile" method="post" enctype="multipart/form-data" class="card">
                     <div class="card-body">
                         <h5 class="card-title">Add Photo</h5>
                         <div class="form-group">
@@ -52,7 +52,7 @@
                         <div class="card-body">
                             @if (isOwner || User.IsInRole("Moderator"))
                             {
-                                <form asp-action="DeletePhoto" method="post" class="d-inline">
+                                <form asp-action="DeletePhoto" asp-controller="Profile" method="post" class="d-inline">
                                     <input type="hidden" name="id" value="@photo.Id" />
                                     <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this photo?')">
                                         Delete

@@ -1,0 +1,136 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    ViewData["Title"] = "Moderator Dashboard";
+}
+
+<div class="container mt-4">
+    <h2>Moderator Dashboard</h2>
+
+    <ul class="nav nav-tabs mb-4" id="moderatorTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab">
+                Postări
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
+                Comentarii
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="moderatorTabsContent">
+        <!-- Postări -->
+        <div class="tab-pane fade show active" id="posts" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Postări Recente</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Posts != null && ViewBag.Posts.Count > 0)
+                    {
+                        foreach (var post in ViewBag.Posts)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-subtitle mb-2 text-muted">
+                                                @post.User.Email - @post.CreatedAt.ToString("g")
+                                            </h6>
+                                            <p class="card-text">@post.Content</p>
+                                        </div>
+                                        <form asp-action="DeletePost" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@post.Id" />
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Sigur doriți să ștergeți această postare?')">
+                                                <i class="fas fa-trash"></i> Șterge
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nu există postări.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Comentarii -->
+        <div class="tab-pane fade" id="comments" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Comentarii Recente</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Comments != null && ViewBag.Comments.Count > 0)
+                    {
+                        foreach (var comment in ViewBag.Comments)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-subtitle mb-2 text-muted">
+                                                @comment.User.Email - @comment.CreatedAt.ToString("g")
+                                            </h6>
+                                            <p class="card-text">@comment.Content</p>
+                                        </div>
+                                        <div>
+                                            <form asp-action="DeleteComment" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@comment.Id" />
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Sigur doriți să ștergeți acest comentariu?')">
+                                                    <i class="fas fa-trash"></i> Șterge
+                                                </button>
+                                            </form>
+                                            @if (!await UserManager.IsInRoleAsync(comment.User, "Blocked"))
+                                            {
+                                                <form asp-action="BlockUser" method="post" class="d-inline">
+                                                    <input type="hidden" name="userId" value="@comment.User.Id" />
+                                                    <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Sigur doriți să blocați acest utilizator?')">
+                                                        <i class="fas fa-ban"></i> Blochează
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="UnblockUser" method="post" class="d-inline">
+                                                    <input type="hidden" name="userId" value="@comment.User.Id" />
+                                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Sigur doriți să deblocați acest utilizator?')">
+                                                        <i class="fas fa-unlock"></i> Deblochează
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nu există comentarii.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Activează tab-urile Bootstrap
+        var triggerTabList = [].slice.call(document.querySelectorAll('#moderatorTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+    </script>
+} 

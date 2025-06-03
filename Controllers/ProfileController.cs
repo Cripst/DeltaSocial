@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace DeltaSocial.Controllers
 {
+    [Route("Profile")]
     [Authorize]
     [VisitorAccess]
     public class ProfileController : Controller
@@ -30,7 +31,58 @@ namespace DeltaSocial.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        [HttpGet]
+        [HttpGet("")]
+        [HttpGet("Index")]
+        [HttpGet("Index/{userId}")]
+        [HttpGet("Index/{userId?}")]
+        public async Task<IActionResult> Index(string userId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+                return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(userId ?? currentUser.Id);
+            if (user == null)
+                return NotFound();
+
+            var profile = await _context.Profiles
+                .Include(p => p.Posts)
+                .Include(p => p.Albums)
+                .ThenInclude(a => a.Photos)
+                .FirstOrDefaultAsync(p => p.UserId == user.Id);
+
+            if (profile == null)
+                return NotFound();
+
+            // Get friendship status if viewing another user's profile
+            if (userId != null && userId != currentUser.Id)
+            {
+                var friendship = await _context.Friendships
+                    .FirstOrDefaultAsync(f => 
+                        (f.SenderId == currentUser.Id && f.ReceiverId == userId) ||
+                        (f.SenderId == userId && f.ReceiverId == currentUser.Id));
+                ViewBag.Friendship = friendship;
+            }
+
+            // Get friends list if viewing own profile
+            if (userId == null || userId == currentUser.Id)
+            {
+                var friends = await _context.Friendships
+                    .Where(f => f.Status == "Accepted" && (f.SenderId == currentUser.Id || f.ReceiverId == currentUser.Id))
+                    .Select(f => new
+                    {
+                        Id = f.SenderId == currentUser.Id ? f.ReceiverId : f.SenderId,
+                        Email = f.SenderId == currentUser.Id ? f.Receiver.Email : f.Sender.Email,
+                        FriendshipId = f.Id
+                    })
+                    .ToListAsync();
+                ViewBag.Friends = friends;
+            }
+
+            return View(profile);
+        }
+
+        [HttpGet("Search")]
         public async Task<IActionResult> Search(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -44,7 +96,7 @@ namespace DeltaSocial.Controllers
             return View(profiles);
         }
 
-        [HttpGet]
+        [HttpGet("View/{id}")]
         public async Task<IActionResult> View(string id)
         {
             var profile = await _context.Profiles
@@ -94,7 +146,7 @@ namespace DeltaSocial.Controllers
         }
 
         [Authorize]
-        [HttpPost]
+        [HttpPost("UpdateVisibility")]
         public async Task<IActionResult> UpdateVisibility(string visibility)
         {
             if (visibility != "Public" && visibility != "Private")
@@ -118,7 +170,7 @@ namespace DeltaSocial.Controllers
 
         // Creare postare
         [Authorize]
-        [HttpPost]
+        [HttpPost("CreatePost")]
         public async Task<IActionResult> CreatePost(string title, string content)
         {
             if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
@@ -139,6 +191,7 @@ namespace DeltaSocial.Controllers
                 Title = title,
                 Content = content,
                 ProfileId = profile.Id,
+                UserId = user.Id,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -149,7 +202,7 @@ namespace DeltaSocial.Controllers
         }
 
         [Authorize]
-        [HttpPost]
+        [HttpPost("DeletePost")]
         public async Task<IActionResult> DeletePost(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -175,7 +228,7 @@ namespace DeltaSocial.Controllers
 
         // Creare album
         [Authorize]
-        [HttpPost]
+        [HttpPost("CreateAlbum")]
         public async Task<IActionResult> CreateAlbum(string title)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -205,7 +258,7 @@ namespace DeltaSocial.Controllers
 
         // Adaugare poza la album
         [Authorize]
-        [HttpPost]
+        [HttpPost("AddPhotoToAlbum")]
         public async Task<IActionResult> AddPhotoToAlbum(int albumId, IFormFile photoFile)
         {
             if (photoFile == null || photoFile.Length == 0)
@@ -251,7 +304,7 @@ namespace DeltaSocial.Controllers
         }
 
         [Authorize]
-        [HttpPost]
+        [HttpPost("DeletePhoto")]
         public async Task<IActionResult> DeletePhoto(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -283,7 +336,7 @@ namespace DeltaSocial.Controllers
             return RedirectToAction(nameof(ViewAlbum), new { id = photo.AlbumId });
         }
 
-        [HttpGet]
+        [HttpGet("ViewAlbum/{id}")]
         public async Task<IActionResult> ViewAlbum(int id)
         {
             var album = await _context.Albums
@@ -319,55 +372,8 @@ namespace DeltaSocial.Controllers
             return View(album);
         }
 
-        public async Task<IActionResult> Index(string userId)
-        {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-                return Unauthorized();
-
-            var user = await _userManager.FindByIdAsync(userId ?? currentUser.Id);
-            if (user == null)
-                return NotFound();
-
-            var profile = await _context.Profiles
-                .Include(p => p.Posts)
-                .Include(p => p.Albums)
-                .ThenInclude(a => a.Photos)
-                .FirstOrDefaultAsync(p => p.UserId == user.Id);
-
-            if (profile == null)
-                return NotFound();
-
-            // Get friendship status if viewing another user's profile
-            if (userId != null && userId != currentUser.Id)
-            {
-                var friendship = await _context.Friendships
-                    .FirstOrDefaultAsync(f => 
-                        (f.SenderId == currentUser.Id && f.ReceiverId == userId) ||
-                        (f.SenderId == userId && f.ReceiverId == currentUser.Id));
-                ViewBag.Friendship = friendship;
-            }
-
-            // Get friends list if viewing own profile
-            if (userId == null || userId == currentUser.Id)
-            {
-                var friends = await _context.Friendships
-                    .Where(f => f.Status == "Accepted" && (f.SenderId == currentUser.Id || f.ReceiverId == currentUser.Id))
-                    .Select(f => new
-                    {
-                        Id = f.SenderId == currentUser.Id ? f.ReceiverId : f.SenderId,
-                        Email = f.SenderId == currentUser.Id ? f.Receiver.Email : f.Sender.Email,
-                        FriendshipId = f.Id
-                    })
-                    .ToListAsync();
-                ViewBag.Friends = friends;
-            }
-
-            return View(profile);
-        }
-
         [Authorize]
-        [HttpPost]
+        [HttpPost("SendFriendRequest")]
         public async Task<IActionResult> SendFriendRequest(string receiverId)
         {
             var sender = await _userManager.GetUserAsync(User);
@@ -397,7 +403,7 @@ namespace DeltaSocial.Controllers
         }
 
         [Authorize]
-        [HttpPost]
+        [HttpPost("AcceptFriendRequest")]
         public async Task<IActionResult> AcceptFriendRequest(int friendshipId)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -420,7 +426,7 @@ namespace DeltaSocial.Controllers
         }
 
         [Authorize]
-        [HttpPost]
+        [HttpPost("RejectFriendRequest")]
         public async Task<IActionResult> RejectFriendRequest(int friendshipId)
         {
             var user = await _userManager.GetUserAsync(User);

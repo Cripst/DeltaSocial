@@ -14,7 +14,12 @@ public class Post
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    public int ProfileId { get; set; }
+    public string UserId { get; set; }
+    
+    [ForeignKey("UserId")]
+    public virtual ApplicationUser User { get; set; }
+    
+    public int? ProfileId { get; set; }
     
     [ForeignKey("ProfileId")]
     public virtual Profile Profile { get; set; }

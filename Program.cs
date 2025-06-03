@@ -78,6 +78,24 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Adăugăm middleware pentru verificarea utilizatorilor blocați
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity.IsAuthenticated)
+    {
+        var userManager = context.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.GetUserAsync(context.User);
+        
+        if (user != null && await userManager.IsInRoleAsync(user, "Blocked"))
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsync("Contul tău a fost blocat. Contactează administratorul pentru mai multe informații.");
+            return;
+        }
+    }
+    await next();
+});
+
 // 6. Mapping pentru Razor Pages și controller routes
 app.MapRazorPages();
 app.MapControllers();
