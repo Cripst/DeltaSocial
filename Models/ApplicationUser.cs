@@ -8,4 +8,6 @@ public class ApplicationUser : IdentityUser
     
     public virtual ICollection<Friendship> SentFriendships { get; set; }
     public virtual ICollection<Friendship> ReceivedFriendships { get; set; }
+    public virtual ICollection<Message> SentMessages { get; set; }
+    public virtual ICollection<Message> ReceivedMessages { get; set; }
 }

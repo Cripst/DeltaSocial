@@ -36,6 +36,15 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Profile" asp-action="Index">Profil</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Message" asp-action="Index">
+                                Messages
+                                @if (User.Identity.IsAuthenticated)
+                                {
+                                    <span class="badge bg-danger" id="unreadMessagesCount"></span>
+                                }
+                            </a>
+                        </li>
                         @if (User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">

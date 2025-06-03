@@ -5,10 +5,112 @@
 @{
     ViewData["Title"] = Model.Name + " - Profil";
     var isVisitor = User.IsInRole("Visitor");
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isOwnProfile = currentUserId == Model.UserId;
 }
 
 <div class="container mt-4">
     <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                    {
+                        <img src="@Model.ProfilePicture" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Profile Picture" />
+                    }
+                    else
+                    {
+                        <img src="https://via.placeholder.com/150" class="rounded-circle mb-3" alt="Default Profile Picture" />
+                    }
+                    <h3>@Model.FirstName @Model.LastName</h3>
+                    <p class="text-muted">@Model.Bio</p>
+                    @if (!isOwnProfile)
+                    {
+                        var friendship = ViewBag.Friendship as Friendship;
+                        if (friendship == null)
+                        {
+                            <form asp-controller="Friendship" asp-action="SendRequest" method="post">
+                                <input type="hidden" name="receiverId" value="@Model.UserId" />
+                                <button type="submit" class="btn btn-primary">Adaugă prieten</button>
+                            </form>
+                        }
+                        else if (friendship.Status == "Pending" && friendship.ReceiverId == currentUserId)
+                        {
+                            <div class="btn-group">
+                                <form asp-controller="Friendship" asp-action="AcceptRequest" method="post" class="d-inline">
+                                    <input type="hidden" name="friendshipId" value="@friendship.Id" />
+                                    <button type="submit" class="btn btn-success">Acceptă</button>
+                                </form>
+                                <form asp-controller="Friendship" asp-action="RejectRequest" method="post" class="d-inline">
+                                    <input type="hidden" name="friendshipId" value="@friendship.Id" />
+                                    <button type="submit" class="btn btn-danger">Respinge</button>
+                                </form>
+                            </div>
+                        }
+                        else if (friendship.Status == "Pending")
+                        {
+                            <button class="btn btn-secondary" disabled>Cerere trimisă</button>
+                        }
+                        else if (friendship.Status == "Accepted")
+                        {
+                            <div class="btn-group">
+                                <a href="@Url.Action("Conversation", "Message", new { userId = Model.UserId })" class="btn btn-primary">
+                                    <i class="fas fa-envelope"></i> Trimite mesaj
+                                </a>
+                                <form asp-controller="Friendship" asp-action="RemoveFriend" method="post" class="d-inline">
+                                    <input type="hidden" name="friendshipId" value="@friendship.Id" />
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Sigur doriți să ștergeți acest prieten?')">
+                                        <i class="fas fa-user-minus"></i> Șterge prieten
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @if (isOwnProfile)
+            {
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Prieteni</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (ViewBag.Friends != null && ViewBag.Friends.Count > 0)
+                        {
+                            <div class="list-group">
+                                @foreach (var friend in ViewBag.Friends)
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="@Url.Action("Index", "Profile", new { userId = friend.Id })" class="text-decoration-none">
+                                                @friend.Email
+                                            </a>
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="@Url.Action("Conversation", "Message", new { userId = friend.Id })" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-envelope"></i>
+                                            </a>
+                                            <form asp-controller="Friendship" asp-action="RemoveFriend" method="post" class="d-inline">
+                                                <input type="hidden" name="friendshipId" value="@friend.FriendshipId" />
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Sigur doriți să ștergeți acest prieten?')">
+                                                    <i class="fas fa-user-minus"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Nu ai prieteni încă.</p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
         <div class="col-md-8">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>@Model.Name</h2>
@@ -41,23 +143,38 @@
                 </div>
             }
 
-            <h4>Postări</h4>
-            @if (Model.Posts != null && Model.Posts.Any())
-            {
-                foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
-                {
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <p class="card-text">@post.Content</p>
-                            <small class="text-muted">@post.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <p>Nu există postări.</p>
-            }
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Postări</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Posts != null && Model.Posts.Any())
+                    {
+                        foreach (var post in Model.Posts.OrderByDescending(p => p.CreatedAt))
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <p class="card-text">@post.Content</p>
+                                    <small class="text-muted">@post.CreatedAt.ToString("g")</small>
+                                    @if (isOwnProfile)
+                                    {
+                                        <form asp-controller="Post" asp-action="Delete" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@post.Id" />
+                                            <button type="submit" class="btn btn-sm btn-danger float-end" onclick="return confirm('Sigur doriți să ștergeți această postare?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">Nu există postări încă.</p>
+                    }
+                </div>
+            </div>
 
             <h4 class="mt-4">Albume</h4>
             @if (!isVisitor)

@@ -319,53 +319,48 @@ namespace DeltaSocial.Controllers
             return View(album);
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string userId)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
-            {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
                 return Unauthorized();
-            }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId ?? currentUser.Id);
             if (user == null)
-            {
-                return NotFound("User not found.");
-            }
+                return NotFound();
 
-            // First try to find the profile by UserId
             var profile = await _context.Profiles
                 .Include(p => p.Posts)
                 .Include(p => p.Albums)
                 .ThenInclude(a => a.Photos)
-                .FirstOrDefaultAsync(p => p.UserId == userId);
+                .FirstOrDefaultAsync(p => p.UserId == user.Id);
 
-            // If no profile found by UserId, try by ProfileId
-            if (profile == null && user.ProfileId.HasValue)
+            if (profile == null)
+                return NotFound();
+
+            // Get friendship status if viewing another user's profile
+            if (userId != null && userId != currentUser.Id)
             {
-                profile = await _context.Profiles
-                    .Include(p => p.Posts)
-                    .Include(p => p.Albums)
-                    .ThenInclude(a => a.Photos)
-                    .FirstOrDefaultAsync(p => p.Id == user.ProfileId.Value);
+                var friendship = await _context.Friendships
+                    .FirstOrDefaultAsync(f => 
+                        (f.SenderId == currentUser.Id && f.ReceiverId == userId) ||
+                        (f.SenderId == userId && f.ReceiverId == currentUser.Id));
+                ViewBag.Friendship = friendship;
             }
 
-            // If still no profile found, create one
-            if (profile == null)
+            // Get friends list if viewing own profile
+            if (userId == null || userId == currentUser.Id)
             {
-                profile = new Profile
-                {
-                    UserId = userId,
-                    Name = user.Email.Split('@')[0],
-                    Visibility = "Public"
-                };
-
-                _context.Profiles.Add(profile);
-                await _context.SaveChangesAsync();
-
-                // Update the user with the new profile ID
-                user.ProfileId = profile.Id;
-                await _userManager.UpdateAsync(user);
+                var friends = await _context.Friendships
+                    .Where(f => f.Status == "Accepted" && (f.SenderId == currentUser.Id || f.ReceiverId == currentUser.Id))
+                    .Select(f => new
+                    {
+                        Id = f.SenderId == currentUser.Id ? f.ReceiverId : f.SenderId,
+                        Email = f.SenderId == currentUser.Id ? f.Receiver.Email : f.Sender.Email,
+                        FriendshipId = f.Id
+                    })
+                    .ToListAsync();
+                ViewBag.Friends = friends;
             }
 
             return View(profile);
