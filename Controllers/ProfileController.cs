@@ -56,6 +56,20 @@ namespace DeltaSocial.Controllers
             if (profile == null)
                 return NotFound();
 
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser != null)
+            {
+                // Get friendship status
+                var friendship = await _context.Friendships
+                    .FirstOrDefaultAsync(f => 
+                        (f.SenderId == currentUser.Id && f.ReceiverId == id) ||
+                        (f.SenderId == id && f.ReceiverId == currentUser.Id));
+
+                ViewBag.FriendshipStatus = friendship?.Status;
+                ViewBag.FriendshipId = friendship?.Id;
+                ViewBag.IsReceiver = friendship?.ReceiverId == currentUser.Id;
+            }
+
             // Check if profile is private
             if (profile.Visibility == "Private")
             {
@@ -63,7 +77,6 @@ namespace DeltaSocial.Controllers
                 if (!User.Identity.IsAuthenticated)
                     return Unauthorized();
 
-                var currentUser = await _userManager.GetUserAsync(User);
                 if (currentUser == null)
                     return Unauthorized();
 
@@ -356,6 +369,82 @@ namespace DeltaSocial.Controllers
             }
 
             return View(profile);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> SendFriendRequest(string receiverId)
+        {
+            var sender = await _userManager.GetUserAsync(User);
+            if (sender == null)
+                return Unauthorized();
+
+            // Check if a friendship already exists
+            var existingFriendship = await _context.Friendships
+                .FirstOrDefaultAsync(f => 
+                    (f.SenderId == sender.Id && f.ReceiverId == receiverId) ||
+                    (f.SenderId == receiverId && f.ReceiverId == sender.Id));
+
+            if (existingFriendship != null)
+                return BadRequest("A friend request already exists between these users");
+
+            var friendship = new Friendship
+            {
+                SenderId = sender.Id,
+                ReceiverId = receiverId,
+                Status = "Pending"
+            };
+
+            _context.Friendships.Add(friendship);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(View), new { id = receiverId });
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> AcceptFriendRequest(int friendshipId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            var friendship = await _context.Friendships
+                .FirstOrDefaultAsync(f => f.Id == friendshipId && f.ReceiverId == user.Id);
+
+            if (friendship == null)
+                return NotFound();
+
+            if (friendship.Status != "Pending")
+                return BadRequest("This friend request has already been processed");
+
+            friendship.Status = "Accepted";
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(View), new { id = friendship.SenderId });
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> RejectFriendRequest(int friendshipId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            var friendship = await _context.Friendships
+                .FirstOrDefaultAsync(f => f.Id == friendshipId && f.ReceiverId == user.Id);
+
+            if (friendship == null)
+                return NotFound();
+
+            if (friendship.Status != "Pending")
+                return BadRequest("This friend request has already been processed");
+
+            friendship.Status = "Rejected";
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(View), new { id = friendship.SenderId });
         }
     }
 }
