@@ -4,8 +4,8 @@
 }
 
 <div class="container mt-4">
-    <h2>Groups</h2>
-    <a asp-action="Create" class="btn btn-success mb-3">Create New Group</a>
+    <h2 class="fw-bold mb-4">Groups</h2>
+    <a asp-action="Create" class="btn btn-success mb-3 rounded-pill px-4 py-2">Create New Group</a>
     @if (!Model.Any())
     {
         <div class="alert alert-info">No groups have been created yet. Be the first to <a asp-action="Create">create one</a>!</div>
@@ -14,11 +14,11 @@
         @foreach (var group in Model)
         {
             <div class="col-12 col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm">
+                <div class="card h-100 shadow-sm border-0">
                     <div class="card-body d-flex flex-column justify-content-between">
-                        <h5 class="card-title">@group.Name</h5>
+                        <h5 class="card-title fw-semibold">@group.Name</h5>
                         <span class="badge bg-primary mb-2">Members: @(group.Members != null ? group.Members.Count : 0)</span>
-                        <a asp-action="View" asp-route-id="@group.Id" class="btn btn-outline-primary mt-auto">View Group</a>
+                        <a asp-action="View" asp-route-id="@group.Id" class="btn btn-outline-primary mt-auto rounded-pill">View Group</a>
                     </div>
                 </div>
             </div>

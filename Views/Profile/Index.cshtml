@@ -162,8 +162,7 @@
                                             <input type="hidden" name="id" value="@post.Id" />
                                             <button type="submit" class="btn btn-sm btn-danger float-end" onclick="return confirm('Sigur doriți să ștergeți această postare?')">
                                                 <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
+                                            </form>
                                     }
                                 </div>
                             </div>
@@ -180,7 +179,7 @@
             @if (!isVisitor)
             {
                 <div class="mb-3">
-                    <a asp-controller="Album" asp-action="Create" class="btn btn-primary">Creează Album Nou</a>
+                    <a asp-controller="Profile" asp-action="View" asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" class="btn btn-primary">Creează Album Nou</a>
                 </div>
             }
 
@@ -209,4 +208,4 @@
             }
         </div>
     </div>
-</div> 
+</div>
