@@ -1,0 +1,32 @@
+@model IEnumerable<Message>
+@{
+    var group = ViewBag.Group as Group;
+    ViewData["Title"] = group?.Name + " - Group Chat";
+}
+<div class="container mt-4">
+    <h2>@group?.Name - Group Chat</h2>
+    <a asp-action="View" asp-route-id="@group?.Id" class="btn btn-link mb-3">&larr; Back to Group</a>
+    <div class="card mb-4" style="max-height: 400px; overflow-y: auto;">
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-muted">No messages yet. Start the conversation!</div>
+            }
+            else
+            {
+                foreach (var msg in Model)
+                {
+                    <div class="mb-3">
+                        <strong>@(msg.Sender?.UserName ?? "[deleted]")</strong>
+                        <span class="text-muted small">@msg.CreatedAt.ToLocalTime().ToString("g")</span>
+                        <div>@msg.Content</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    <form asp-action="SendMessage" asp-route-id="@group?.Id" method="post" class="d-flex">
+        <input type="text" name="content" class="form-control me-2" placeholder="Type your message..." autocomplete="off" required />
+        <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Send</button>
+    </form>
+</div>

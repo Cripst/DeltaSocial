@@ -1,0 +1,50 @@
+@model Group
+@{
+    ViewData["Title"] = Model.Name + " - Group";
+    var isMember = Model.Members.Any(m => m.UserId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+}
+
+<div class="container mt-4">
+    <h2>@Model.Name</h2>
+    <p>Members: @(Model.Members?.Count ?? 0)</p>
+    @if (User.Identity.IsAuthenticated)
+    {
+        if (isMember)
+        {
+            <div class="mb-3">
+                <form asp-action="Leave" method="post" class="d-inline">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger me-2">Leave Group</button>
+                </form>
+                <a asp-action="Chat" asp-route-id="@Model.Id" class="btn btn-outline-secondary align-middle" title="Open Group Chat">
+                    <i class="bi bi-chat-dots"></i> Group Chat
+                </a>
+            </div>
+        }
+        else
+        {
+            <form asp-action="Join" method="post" class="mb-3">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-primary">Join Group</button>
+            </form>
+        }
+    }
+    <h4>Members</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var member in Model.Members)
+        {
+            <tr>
+                <td>@(string.IsNullOrWhiteSpace(member.Name) ? "(no name)" : member.Name)</td>
+                <td>@(member.User != null && !string.IsNullOrWhiteSpace(member.User.Email) ? member.User.Email : "(no email)")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

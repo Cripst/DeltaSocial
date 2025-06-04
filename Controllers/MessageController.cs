@@ -109,7 +109,8 @@ namespace DeltaSocial.Controllers
             {
                 SenderId = sender.Id,
                 ReceiverId = receiverId,
-                Content = content
+                Content = content,
+                GroupId = null // Ensure this is always null for private messages
             };
 
             _context.Messages.Add(message);

@@ -1,0 +1,16 @@
+@model Group
+@{
+    ViewData["Title"] = "Create Group";
+}
+
+<div class="container mt-4">
+    <h2>Create New Group</h2>
+    <form asp-action="Create" method="post">
+        <div class="form-group mb-3">
+            <label for="Name">Group Name</label>
+            <input type="text" name="Name" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-success">Create Group</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
