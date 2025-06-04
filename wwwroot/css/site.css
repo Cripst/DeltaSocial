@@ -19,4 +19,90 @@ html {
 
 body {
   margin-bottom: 60px;
+  background: linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%);
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  color: #222;
+}
+
+.card {
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px 0 rgba(34, 60, 80, 0.08);
+  border: none;
+}
+
+.card-footer, .card-body {
+  background: #fff;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.navbar {
+  border-radius: 0 0 1rem 1rem;
+  box-shadow: 0 2px 8px 0 rgba(34, 60, 80, 0.08);
+}
+
+.btn-primary, .btn-success, .btn-danger, .btn-outline-primary, .btn-outline-secondary {
+  border-radius: 2rem;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #4f8cff 0%, #6f6fff 100%);
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(90deg, #3a6fd8 0%, #5a5ad6 100%);
+}
+
+input.form-control, textarea.form-control {
+  border-radius: 1.5rem;
+  border: 1px solid #e0e7ef;
+  background: #f8fafc;
+  transition: border 0.2s;
+}
+
+input.form-control:focus, textarea.form-control:focus {
+  border: 1.5px solid #4f8cff;
+  background: #fff;
+}
+
+.list-group-item {
+  border: none;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: #f4f7fb;
+}
+
+.badge {
+  font-size: 0.9em;
+  border-radius: 1rem;
+  padding: 0.4em 0.8em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.alert-info {
+  background: linear-gradient(90deg, #e0e7ef 0%, #f8fafc 100%);
+  color: #3a6fd8;
+  border: none;
+  border-radius: 1rem;
+}
+
+.table {
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #e0e7ef;
+}
+::-webkit-scrollbar-thumb {
+  background: #b0b8c1;
+  border-radius: 4px;
 }

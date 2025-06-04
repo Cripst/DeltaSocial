@@ -73,6 +73,8 @@ namespace DeltaSocial.Controllers
                 .Where(m => (m.SenderId == currentUser.Id && m.ReceiverId == userId) ||
                            (m.SenderId == userId && m.ReceiverId == currentUser.Id))
                 .OrderBy(m => m.CreatedAt)
+                .Include(m => m.Sender)
+                .Include(m => m.Receiver)
                 .ToListAsync();
 
             // Mark unread messages as read
@@ -136,10 +138,12 @@ namespace DeltaSocial.Controllers
             if (message.SenderId != user.Id)
                 return Forbid();
 
+            string otherUserId = message.SenderId == user.Id ? message.ReceiverId : message.SenderId;
+
             _context.Messages.Remove(message);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Conversation), new { userId = message.ReceiverId });
+            return RedirectToAction(nameof(Conversation), new { userId = otherUserId });
         }
     }
 }

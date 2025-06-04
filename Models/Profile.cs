@@ -8,10 +8,10 @@ public class Profile
     public int Id { get; set; }
     
     [Required]
-    public string UserId { get; set; }
+    public string UserId { get; set; } = string.Empty;
     
     [ForeignKey("UserId")]
-    public virtual ApplicationUser User { get; set; }
+    public virtual ApplicationUser? User { get; set; }
     
     public string? Name { get; set; }
     
@@ -25,9 +25,9 @@ public class Profile
     
     public string Visibility { get; set; } = "Public";
     
-    public virtual ICollection<Post> Posts { get; set; }
+    public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
     
-    public virtual ICollection<Album> Albums { get; set; }
+    public virtual ICollection<Album> Albums { get; set; } = new List<Album>();
     
     public int? GroupId { get; set; }
     

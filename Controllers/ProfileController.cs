@@ -97,7 +97,7 @@ namespace DeltaSocial.Controllers
         }
 
         [HttpGet("View/{id}")]
-        public async Task<IActionResult> View(string id)
+        public new async Task<IActionResult> View(string id)
         {
             var profile = await _context.Profiles
                 .Include(p => p.Posts)
@@ -343,6 +343,7 @@ namespace DeltaSocial.Controllers
                 .Include(a => a.Profile)
                 .Include(a => a.Photos)
                 .ThenInclude(p => p.Comments)
+                    .ThenInclude(c => c.User)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (album == null)
@@ -446,6 +447,79 @@ namespace DeltaSocial.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(View), new { id = friendship.SenderId });
+        }
+
+        [Authorize]
+        [HttpPost("AddPhotoComment")]
+        public async Task<IActionResult> AddPhotoComment(int photoId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                return BadRequest("Comment content is required");
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            var photo = await _context.Photos.Include(p => p.Album).FirstOrDefaultAsync(p => p.Id == photoId);
+            if (photo == null)
+                return NotFound();
+
+            var comment = new Comment
+            {
+                Content = content,
+                UserId = user.Id,
+                PostId = null, // Not a post comment
+                ApprovalStatus = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+            if (photo.Comments == null) photo.Comments = new List<Comment>();
+            photo.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(ViewAlbum), new { id = photo.AlbumId });
+        }
+
+        [Authorize]
+        [HttpPost("ApproveComment")]
+        public async Task<IActionResult> ApproveComment(int commentId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+            var comment = await _context.Comments.Include(c => c.User).FirstOrDefaultAsync(c => c.Id == commentId);
+            if (comment == null)
+                return NotFound();
+            // Find the photo that contains this comment
+            var photo = await _context.Photos.Include(p => p.Album).ThenInclude(a => a.Profile)
+                .FirstOrDefaultAsync(p => p.Comments.Any(c => c.Id == commentId));
+            if (photo == null || photo.Album == null || photo.Album.Profile == null)
+                return NotFound();
+            if (photo.Album.Profile.UserId != user.Id)
+                return Forbid();
+            comment.ApprovalStatus = "Accepted";
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(ViewAlbum), new { id = photo.AlbumId });
+        }
+
+        [Authorize]
+        [HttpPost("RejectComment")]
+        public async Task<IActionResult> RejectComment(int commentId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+            var comment = await _context.Comments.Include(c => c.User).FirstOrDefaultAsync(c => c.Id == commentId);
+            if (comment == null)
+                return NotFound();
+            // Find the photo that contains this comment
+            var photo = await _context.Photos.Include(p => p.Album).ThenInclude(a => a.Profile)
+                .FirstOrDefaultAsync(p => p.Comments.Any(c => c.Id == commentId));
+            if (photo == null || photo.Album == null || photo.Album.Profile == null)
+                return NotFound();
+            if (photo.Album.Profile.UserId != user.Id)
+                return Forbid();
+            comment.ApprovalStatus = "Rejected";
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(ViewAlbum), new { id = photo.AlbumId });
         }
     }
 }

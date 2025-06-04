@@ -19,27 +19,38 @@
                     <h5 class="mb-0">Conversation with @ViewBag.OtherUser.Email</h5>
                 </div>
                 <div class="card-body" style="height: 400px; overflow-y: auto;">
-                    @foreach (var message in Model)
+                    @if (!Model.Any())
                     {
-                        <div class="d-flex @(message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "justify-content-end" : "justify-content-start") mb-3">
-                            <div class="card @(message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "bg-primary text-white" : "bg-light")" style="max-width: 75%;">
-                                <div class="card-body">
-                                    <p class="card-text">@message.Content</p>
-                                    <small class="@(message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "text-white-50" : "text-muted")">
-                                        @message.CreatedAt.ToString("g")
-                                    </small>
-                                    @if (message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
-                                    {
-                                        <form asp-action="DeleteMessage" method="post" class="d-inline">
-                                            <input type="hidden" name="id" value="@message.Id" />
-                                            <button type="submit" class="btn btn-sm btn-danger float-end" onclick="return confirm('Are you sure you want to delete this message?')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    }
+                        <div class="text-center text-muted mt-5">No messages yet. Start the conversation!</div>
+                    }
+                    else
+                    {
+                        @foreach (var message in Model)
+                        {
+                            if (!string.IsNullOrWhiteSpace(message.Content))
+                            {
+                                <div class="d-flex @(message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "justify-content-end" : "justify-content-start") mb-3">
+                                    <div class="card shadow-sm px-0"
+                                         style="max-width: 75%; background: @(message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "linear-gradient(90deg,#4f8cff 0%,#6f6fff 100%)" : "#f4f7fb"); color: #222; border-radius: 1.2rem; border: none;">
+                                        <div class="card-body">
+                                            <p class="card-text mb-2">@message.Content</p>
+                                            <small class="@(message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ? "text-white-50" : "text-muted")">
+                                                @message.CreatedAt.ToString("g")
+                                            </small>
+                                            @if (message.SenderId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+                                            {
+                                                <form asp-action="DeleteMessage" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@message.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-danger float-end ms-2" onclick="return confirm('Are you sure you want to delete this message?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            }
+                        }
                     }
                 </div>
                 <div class="card-footer">
@@ -64,4 +75,4 @@
             messageContainer.scrollTop = messageContainer.scrollHeight;
         });
     </script>
-} 
+}

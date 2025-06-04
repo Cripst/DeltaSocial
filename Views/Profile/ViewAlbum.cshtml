@@ -60,9 +60,55 @@
                                 </form>
                             }
                         </div>
+                        <div class="card-footer bg-white border-0">
+                            <h6 class="fw-bold mb-2">Comments</h6>
+                            @if (photo.Comments != null && photo.Comments.Any())
+                            {
+                                <ul class="list-group mb-2 border-0">
+                                    @foreach (var comment in photo.Comments)
+                                    {
+                                        if (comment.ApprovalStatus == "Accepted" || isOwner)
+                                        {
+                                            <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm">
+                                                <span>
+                                                    <strong class="text-primary">
+                                                        @if (comment.User != null)
+                                                        {
+                                                            @(string.IsNullOrWhiteSpace(comment.User.Email) ? (comment.User.UserName ?? "[user]") : comment.User.Email)
+                                                        }
+                                                        else
+                                                        {
+                                                            @:"[user]"
+                                                        }
+                                                    </strong>
+                                                    : @comment.Content
+                                                    <span class="badge bg-secondary ms-2">@comment.ApprovalStatus</span>
+                                                </span>
+                                                @if (isOwner && comment.ApprovalStatus == "Pending")
+                                                {
+                                                    <form asp-action="ApproveComment" asp-controller="Profile" method="post" class="d-inline me-1">
+                                                        <input type="hidden" name="commentId" value="@comment.Id" />
+                                                        <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                                                    </form>
+                                                    <form asp-action="RejectComment" asp-controller="Profile" method="post" class="d-inline">
+                                                        <input type="hidden" name="commentId" value="@comment.Id" />
+                                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                                    </form>
+                                                }
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            }
+                            <form asp-action="AddPhotoComment" asp-controller="Profile" method="post" class="d-flex mt-2">
+                                <input type="hidden" name="photoId" value="@photo.Id" />
+                                <input type="text" name="content" class="form-control me-2 shadow-sm" placeholder="Add a comment..." required />
+                                <button type="submit" class="btn btn-primary">Comment</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             }
         }
     </div>
-</div> 
+</div>
