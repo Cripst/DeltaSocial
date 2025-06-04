@@ -8,8 +8,7 @@ public class Message
     [Required]
     public string SenderId { get; set; }
     
-    [Required]
-    public string ReceiverId { get; set; }
+    public string? ReceiverId { get; set; }
     
     [Required]
     public string Content { get; set; }
@@ -17,6 +16,8 @@ public class Message
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     public bool IsRead { get; set; } = false;
+
+    public int? GroupId { get; set; }
     
     [ForeignKey("SenderId")]
     [InverseProperty("SentMessages")]
@@ -25,4 +26,7 @@ public class Message
     [ForeignKey("ReceiverId")]
     [InverseProperty("ReceivedMessages")]
     public virtual ApplicationUser Receiver { get; set; }
+
+    [ForeignKey("GroupId")]
+    public virtual Group Group { get; set; }
 }
